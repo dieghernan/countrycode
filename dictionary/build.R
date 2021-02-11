@@ -54,7 +54,7 @@ dat$iso$iso2c[dat$iso$iso.name.en == 'Namibia'] <- 'NA'
 ###################
 
 idx <- sapply(dat, function(x) !'year' %in% names(x))
-cs <- dat[idx] %>% 
+cs <- dat[idx] %>%
       reduce(left_join, by = 'country.name.en.regex')
 
 # sanity check
@@ -90,7 +90,7 @@ pan <- pan[idx,]
 tmp <- pan %>%
        arrange(country.name.en.regex, year) %>%
        group_by(country.name.en.regex) %>%
-       mutate_at(vars(-group_cols()), na.locf, na.rm = FALSE) %>% 
+       mutate_at(vars(-group_cols()), na.locf, na.rm = FALSE) %>%
        filter(year == max(year)) %>%
        # arbitrary choices
        mutate(p4n = ifelse(p4.name == 'Prussia', NA, p4n),
@@ -99,7 +99,7 @@ tmp <- pan %>%
               p4c = ifelse(p4.name == 'Serbia and Montenegro', NA, p4c),
               vdem = ifelse(vdem.name == 'Czechoslovakia', NA, vdem))
 
-cs <- cs %>% 
+cs <- cs %>%
       left_join(tmp, by = 'country.name.en.regex') %>%
       select(-year)
 
@@ -115,7 +115,7 @@ cs$country.name <- NULL
 
 # merge cs into pan
 idx <- c('country.name.en.regex', setdiff(colnames(cs), colnames(pan)))
-pan <- pan %>% 
+pan <- pan %>%
        left_join(cs[, idx], by = 'country.name.en.regex') %>%
        select(-matches('name$|cldr'))
 
@@ -159,8 +159,28 @@ for (col in colnames(pan)[sapply(pan, class) == 'character']) {
 ##  save  #
 ###########
 
-codelist <- cs
-codelist_panel <- pan
+valid_origin = c("cctld", "country.name.de", "cowc", "cown", "dhs",
+                 "ecb", "eurostat", "fao", "fips", "gaul", "genc2c",
+                 "genc3c", "genc3n", "gwc", "gwn", "imf", "ioc", "iso2c", "iso3c",
+                 "iso3n", "p4c", "p4n", "un", "unicode.symbol", "unpd",
+                 "vdem", "wb", "wb_api2c", "wb_api3c", "wvs",
+                 "country.name.en.regex", "country.name.de.regex")
+
+csvalid <- cs[, valid_origin]
+csnovalid <- cs[, setdiff(colnames(cs), valid_origin)]
+csnovalid[csnovalid == "NA"] <- NA
+
+csend <- cbind(csvalid, csnovalid)
+csend <- csend[, colnames(cs)]
+codelist <- csend
+
+
+pannovalid <- pan[, setdiff(colnames(pan), valid_origin)]
+panvalid <- pan[, setdiff(colnames(pan), colnames(pannovalid))]
+pannovalid[pannovalid == "NA"] <- NA
+panend <- cbind(panvalid, pannovalid)
+
+codelist_panel <- panend
 
 save(codelist, file = 'data/codelist.rda', compress = 'xz', version = 2)
 save(codelist_panel, file = 'data/codelist_panel.rda', compress = 'xz', version = 2)

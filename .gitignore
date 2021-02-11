@@ -5,6 +5,3 @@
 
 *.DS_Store
 docs
-countrycode.Rcheck/
-countrycode*.tar.gz
-countrycode*.tgz
